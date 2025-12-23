@@ -1,0 +1,78 @@
+import json
+import boto3
+import datetime
+import urllib.parse
+
+# AWS clients
+s3 = boto3.client("s3")
+dynamodb = boto3.resource("dynamodb")
+
+# CHANGE NOTHING HERE
+DYNAMODB_TABLE_NAME = "DynamoDB"
+table = dynamodb.Table(DYNAMODB_TABLE_NAME)
+
+
+def analyze_sentiment(text):
+    text = text.lower()
+
+    positive_words = ["good", "great", "delicious", "happy", "excellent", "quick"]
+    negative_words = ["bad", "poor", "late", "unhappy", "terrible"]
+
+    score = 0
+    for word in positive_words:
+        if word in text:
+            score += 1
+
+    for word in negative_words:
+        if word in text:
+            score -= 1
+
+    if score > 0:
+        return "Positive"
+    elif score < 0:
+        return "Negative"
+    else:
+        return "Neutral"
+
+
+def lambda_handler(event, context):
+    try:
+        # Get S3 info
+        record = event["Records"][0]
+        bucket_name = record["s3"]["bucket"]["name"]
+        object_key = urllib.parse.unquote_plus(
+            record["s3"]["object"]["key"]
+        )
+
+        # ---- Mock transcription (intentional & explainable) ----
+        transcription_text = (
+            "The food was delicious and delivery was quick. I am very happy with the service."
+        )
+
+        sentiment = analyze_sentiment(transcription_text)
+
+        # Timestamp
+        timestamp = datetime.datetime.utcnow().isoformat()
+
+        # Save to DynamoDB
+        table.put_item(
+            Item={
+                "file_id": object_key,
+                "s3_bucket": bucket_name,
+                "transcription": transcription_text,
+                "sentiment": sentiment,
+                "uploaded_at": timestamp
+            }
+        )
+
+        return {
+            "statusCode": 200,
+            "body": json.dumps("Processed successfully")
+        }
+
+    except Exception as e:
+        print("Error:", str(e))
+        return {
+            "statusCode": 500,
+            "body": json.dumps("Error processing file")
+        }

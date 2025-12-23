@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Record Voice Feedback</title>
+</head>
+<body>
+
+<h2>Record your voice feedback</h2>
+
+<button id="startBtn">Start Recording</button>
+<button id="stopBtn" disabled>Stop Recording</button>
+
+<form id="uploadForm" method="POST" action="/upload" enctype="multipart/form-data">
+    <input type="file" id="audioInput" name="audio" hidden>
+    <button type="submit" id="uploadBtn" disabled>Upload</button>
+</form>
+
+<script>
+let mediaRecorder;
+let audioChunks = [];
+
+document.getElementById("startBtn").onclick = async () => {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaRecorder = new MediaRecorder(stream);
+    audioChunks = [];
+
+    mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+    mediaRecorder.onstop = () => {
+        const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
+        const audioFile = new File([audioBlob], "recording.webm", { type: "audio/webm" });
+
+        const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(audioFile);
+        document.getElementById("audioInput").files = dataTransfer.files;
+
+        // Enable upload
+        document.getElementById("uploadBtn").disabled = false;
+    };
+
+    mediaRecorder.start();
+    document.getElementById("startBtn").disabled = true;
+    document.getElementById("stopBtn").disabled = false;
+};
+
+document.getElementById("stopBtn").onclick = () => {
+    mediaRecorder.stop();
+    document.getElementById("startBtn").disabled = false;
+    document.getElementById("stopBtn").disabled = true;
+};
+</script>
+
+</body>
+</html>

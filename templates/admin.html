@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Dashboard</title>
+</head>
+<body>
+<h2>Admin Dashboard</h2>
+
+{% for feedback in feedback_data %}
+<div style="border:1px solid #ccc; padding:10px; margin:10px 0;">
+    <p><strong>File:</strong> {{ feedback.filename }}</p>
+    <audio controls>
+        <source src="{{ url_for('uploaded_file', filename=feedback.filename) }}" type="audio/webm">
+    </audio>
+    <p><strong>Transcription:</strong> {{ feedback.transcription }}</p>
+    <p><strong>Sentiment:</strong> {{ feedback.sentiment }}</p>
+</div>
+{% endfor %}
+
+</body>
+</html>
+
